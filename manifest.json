@@ -5,7 +5,8 @@
   "description": "Highlights words on news pages based on your CEFR level and shows context-aware definitions.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
     "https://api.dictionaryapi.dev/*"

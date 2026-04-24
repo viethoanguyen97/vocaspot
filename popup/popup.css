@@ -1,0 +1,239 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.vs-popup {
+  width: 320px;
+  padding: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.vs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vs-logo {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.vs-app-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0D9488;
+  letter-spacing: -0.3px;
+}
+
+/* ── Sections ────────────────────────────────────────────── */
+
+.vs-section {
+  padding: 14px 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.vs-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vs-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.vs-label-inline {
+  margin-bottom: 0;
+}
+
+/* ── CEFR buttons ────────────────────────────────────────── */
+
+.vs-cefr-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.vs-cefr-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.vs-cefr-btn:hover {
+  border-color: #0D9488;
+  color: #0D9488;
+}
+
+.vs-cefr-btn.active {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #fff;
+}
+
+.vs-cefr-desc {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+  min-height: 1.4em;
+}
+
+/* ── Style swatches ──────────────────────────────────────── */
+
+.vs-style-swatches {
+  display: flex;
+  gap: 8px;
+}
+
+.vs-swatch {
+  flex: 1;
+  padding: 10px 6px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.vs-swatch:hover {
+  border-color: #0D9488;
+}
+
+.vs-swatch.active {
+  border-color: #0D9488;
+  background: #f0fdfc;
+}
+
+.vs-preview {
+  font-size: 12px;
+  color: #374151;
+  white-space: nowrap;
+  display: inline;
+}
+
+.vs-preview-dashed {
+  border-bottom: 2px dashed #0D9488;
+  padding-bottom: 1px;
+}
+
+.vs-preview-bg-yellow {
+  background: #FEF08A;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.vs-preview-dotted {
+  border-bottom: 2px dotted #F97316;
+  padding-bottom: 1px;
+}
+
+/* ── Toggle switch ───────────────────────────────────────── */
+
+.vs-toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.vs-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.vs-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background: #d1d5db;
+  transition: background 0.2s;
+}
+
+.vs-toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.vs-toggle input:checked + .vs-toggle-track {
+  background: #0D9488;
+}
+
+.vs-toggle input:checked + .vs-toggle-track::after {
+  transform: translateX(18px);
+}
+
+/* ── Stats ───────────────────────────────────────────────── */
+
+.vs-stats {
+  font-size: 12px;
+  color: #0D9488;
+  font-weight: 500;
+  padding: 8px 10px;
+  background: #f0fdfc;
+  border-radius: 6px;
+  margin-top: 2px;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+
+.vs-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #9ca3af;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 12px;
+  margin-top: 14px;
+}
+
+.vs-footer a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.vs-footer a:hover {
+  color: #0D9488;
+  text-decoration: underline;
+}

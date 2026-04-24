@@ -1,23 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>VocaSpot</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <main id="app">
-      <h1>VocaSpot</h1>
-      <label for="cefr-level">Your CEFR level</label>
-      <select id="cefr-level">
-        <option value="A1">A1</option>
-        <option value="A2">A2</option>
-        <option value="B1">B1</option>
-        <option value="B2">B2</option>
-        <option value="C1">C1</option>
-        <option value="C2">C2</option>
-      </select>
-    </main>
-    <script src="popup.js"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <title>VocaSpot</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="vs-popup">
+
+    <header class="vs-header">
+      <img src="../icons/icon-48.png" alt="" class="vs-logo" />
+      <span class="vs-app-name">VocaSpot</span>
+    </header>
+
+    <section class="vs-section">
+      <span class="vs-label">My current level</span>
+      <div class="vs-cefr-buttons">
+        <button class="vs-cefr-btn" data-level="A1">A1</button>
+        <button class="vs-cefr-btn" data-level="A2">A2</button>
+        <button class="vs-cefr-btn" data-level="B1">B1</button>
+        <button class="vs-cefr-btn" data-level="B2">B2</button>
+        <button class="vs-cefr-btn" data-level="C1">C1</button>
+        <button class="vs-cefr-btn" data-level="C2">C2</button>
+      </div>
+      <p class="vs-cefr-desc" id="cefr-desc"></p>
+    </section>
+
+    <section class="vs-section">
+      <span class="vs-label">Highlight style</span>
+      <div class="vs-style-swatches">
+        <button class="vs-swatch" data-style="underline-dashed" title="Teal dashed underline">
+          <span class="vs-preview vs-preview-dashed">Example</span>
+        </button>
+        <button class="vs-swatch" data-style="bg-yellow" title="Yellow background">
+          <span class="vs-preview vs-preview-bg-yellow">Example</span>
+        </button>
+        <button class="vs-swatch" data-style="underline-dotted" title="Orange dotted underline">
+          <span class="vs-preview vs-preview-dotted">Example</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="vs-section vs-section-row">
+      <span class="vs-label vs-label-inline">Enable VocaSpot on this site</span>
+      <label class="vs-toggle">
+        <input type="checkbox" id="site-toggle" />
+        <span class="vs-toggle-track"></span>
+      </label>
+    </section>
+
+    <div class="vs-stats">
+      Words spotted today: <span id="word-count">0</span>
+    </div>
+
+    <footer class="vs-footer">
+      <span>VocaSpot v0.1.0</span>
+      <a href="#" id="report-link" target="_blank" rel="noopener">Report an issue</a>
+    </footer>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
 </html>
