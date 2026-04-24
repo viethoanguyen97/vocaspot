@@ -1,0 +1,254 @@
+:host {
+  display: contents;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+div, p, h2, h4, span, button, a {
+  margin: 0;
+  padding: 0;
+}
+
+#vs-sidebar {
+  /* Break ALL inherited property chains from the host page.
+     Properties declared after this line override the reset. */
+  all: initial;
+  box-sizing: border-box;
+  direction: ltr;
+
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: 999998;
+  overflow-y: auto;
+  transform: translateX(340px);
+  transition: transform 0.25s ease;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
+#vs-sidebar.vs-sb-visible {
+  transform: translateX(0);
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+
+.vs-sb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #0D9488;
+  color: white;
+  flex-shrink: 0;
+}
+
+.vs-sb-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.vs-sb-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.8;
+  line-height: 1;
+  padding: 2px;
+}
+
+.vs-sb-close:hover {
+  opacity: 1;
+}
+
+/* ── Word section ───────────────────────────────────────────────── */
+
+.vs-sb-word-section {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.vs-sb-word {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.vs-sb-level-badge {
+  display: inline-block;
+  background: #0D9488;
+  color: white;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.vs-sb-phonetic {
+  font-size: 13px;
+  color: #6b7280;
+  vertical-align: middle;
+}
+
+.vs-sb-audio {
+  display: block;
+  margin-top: 10px;
+  background: none;
+  border: 1px solid #0D9488;
+  color: #0D9488;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.vs-sb-audio:hover {
+  background: #f0fdfa;
+}
+
+/* ── Content sections ───────────────────────────────────────────── */
+
+.vs-sb-context-section,
+.vs-sb-definitions-section,
+.vs-sb-synonyms-section,
+.vs-sb-links-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.vs-sb-context {
+  font-size: 13px;
+  color: #374151;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.vs-sb-context strong {
+  font-style: normal;
+  color: #0D9488;
+  font-weight: 700;
+}
+
+/* ── Definition items ───────────────────────────────────────────── */
+
+.vs-def-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.vs-def-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.vs-pos {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 3px;
+}
+
+.vs-def-text {
+  font-size: 14px;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+}
+
+.vs-def-example {
+  font-size: 13px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ── Synonyms ────────────────────────────────────────────────────── */
+
+.vs-sb-synonyms {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* ── Links ───────────────────────────────────────────────────────── */
+
+.vs-sb-cambridge,
+.vs-sb-merriam {
+  display: block;
+  color: #0D9488;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.vs-sb-cambridge {
+  margin-bottom: 4px;
+}
+
+.vs-sb-cambridge:hover,
+.vs-sb-merriam:hover {
+  text-decoration: underline;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+
+.vs-sb-footer {
+  padding: 16px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.vs-sb-save {
+  width: 100%;
+  padding: 10px;
+  background: #0D9488;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.vs-sb-save:hover {
+  background: #0f766e;
+}
+
+.vs-sb-saved-msg {
+  display: block;
+  text-align: center;
+  color: #0D9488;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.vs-sb-saved-msg[hidden] {
+  display: none;
+}
