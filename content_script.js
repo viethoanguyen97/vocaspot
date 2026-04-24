@@ -300,10 +300,30 @@ function filterByUserLevel(words, userLevel) {
 // Entry point
 // ---------------------------------------------------------------------------
 
+function removeHighlights() {
+  for (const span of [...document.querySelectorAll('.vs-highlight')]) {
+    const parent = span.parentNode;
+    if (!parent) continue;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+  }
+  hideTooltip();
+}
+
+async function updateWordCount(count) {
+  if (count <= 0) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const { wordCount = 0, wordCountDate = '' } =
+    await chrome.storage.local.get({ wordCount: 0, wordCountDate: '' });
+  const existing = wordCountDate === today ? wordCount : 0;
+  await chrome.storage.local.set({ wordCount: existing + count, wordCountDate: today });
+}
+
 async function main() {
-  // chrome.storage.sync.get returns a Promise in MV3; default applied when key absent.
-  const { userLevel } = await chrome.storage.sync.get({ userLevel: 'B1' });
-  console.log(`[VocaSpot] User level: ${userLevel}`);
+  const { cefrLevel = 'B1', highlightStyle = 'underline-dashed' } =
+    await chrome.storage.sync.get({ cefrLevel: 'B1', highlightStyle: 'underline-dashed' });
+  console.log(`[VocaSpot] User level: ${cefrLevel}`);
 
   const articleNode = findArticleBody();
   if (!articleNode) {
@@ -319,14 +339,15 @@ async function main() {
     return;
   }
 
-  const filtered = filterByUserLevel(words, userLevel);
+  const filtered = filterByUserLevel(words, cefrLevel);
   console.log(
     `[VocaSpot] main: ${filtered.length} word(s) to highlight:`,
     filtered.map(w => `${w.word} [${w.lemma}] (${w.cefrLevel})`)
   );
 
-  highlightWords(filtered);
+  highlightWords(filtered, highlightStyle);
   init();
+  updateWordCount(filtered.length).catch(() => {});
 }
 
 // Run after the page is idle so we never block initial render or user interaction.
@@ -338,6 +359,24 @@ const scheduleIdle = typeof requestIdleCallback === 'function'
   ? cb => requestIdleCallback(cb, { timeout: 4000 })
   : cb => setTimeout(cb, 0);
 
-scheduleIdle(() => {
+scheduleIdle(async () => {
+  const { disabledSites = [] } = await chrome.storage.sync.get({ disabledSites: [] });
+  if (disabledSites.includes(window.location.hostname)) {
+    console.log('[VocaSpot] disabled on this site, skipping');
+    return;
+  }
   main().catch(err => console.error('[VocaSpot] main error:', err));
+});
+
+let _rescanTimer = null;
+
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.action !== 'settingsUpdated') return;
+  clearTimeout(_rescanTimer);
+  _rescanTimer = setTimeout(async () => {
+    removeHighlights();
+    const { disabledSites = [] } = await chrome.storage.sync.get({ disabledSites: [] });
+    if (disabledSites.includes(window.location.hostname)) return;
+    main().catch(err => console.error('[VocaSpot] re-scan error:', err));
+  }, 150);
 });

@@ -1,18 +1,33 @@
-function injectStyles() {
-  if (document.getElementById('vs-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'vs-styles';
+function injectStyles(highlightStyle) {
+  let style = document.getElementById('vs-styles');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'vs-styles';
+    document.head.appendChild(style);
+  }
+
+  let decoration, hover;
+  if (highlightStyle === 'bg-yellow') {
+    decoration = 'background-color: #FEF08A;';
+    hover = 'background-color: #FDE047;';
+  } else if (highlightStyle === 'underline-dotted') {
+    decoration = 'border-bottom: 2px dotted #F97316;';
+    hover = 'background-color: rgba(249, 115, 22, 0.1);';
+  } else {
+    decoration = 'border-bottom: 2px dashed #0D9488;';
+    hover = 'background-color: rgba(13, 148, 136, 0.1);';
+  }
+
   style.textContent =
     '.vs-highlight {\n' +
     '  display: inline;\n' +
-    '  border-bottom: 2px dashed #0D9488;\n' +
+    '  ' + decoration + '\n' +
     '  cursor: pointer;\n' +
     '  border-radius: 2px;\n' +
     '}\n' +
     '.vs-highlight:hover {\n' +
-    '  background-color: rgba(13, 148, 136, 0.1);\n' +
+    '  ' + hover + '\n' +
     '}';
-  document.head.appendChild(style);
 }
 
 /**
@@ -24,8 +39,8 @@ function injectStyles() {
  *
  * @param {Array<{word, lemma, cefrLevel, textNode, offset}>} wordList
  */
-function highlightWords(wordList) {
-  injectStyles();
+function highlightWords(wordList, highlightStyle) {
+  injectStyles(highlightStyle);
 
   // Group items by their source text node so all words in the same node
   // can be sorted and processed together.
