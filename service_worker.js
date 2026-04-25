@@ -55,7 +55,10 @@ async function fetchDefinitionData(word) {
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action !== 'fetchDefinition') return false;
 
-  const word = message.payload?.word;
+  // Support both { payload: { word } } (CEFR click) and { word, lemma } (manual lookup)
+  const word = message.payload?.word ?? message.word;
+  const lemma = message.payload?.lemma ?? message.lemma;
+
   if (!word) {
     sendResponse({ error: true, word: '' });
     return false;
@@ -72,6 +75,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse(result);
     })
     .catch(() => {
+      if (lemma && lemma !== word) {
+        if (definitionCache.has(lemma)) {
+          sendResponse(definitionCache.get(lemma));
+          return;
+        }
+        fetchDefinitionData(lemma)
+          .then(result => {
+            definitionCache.set(lemma, result);
+            sendResponse(result);
+          })
+          .catch(() => sendResponse({ error: true, word }));
+        return;
+      }
       sendResponse({ error: true, word });
     });
 

@@ -426,19 +426,74 @@ scheduleIdle(async () => {
     if (DEBUG) console.log('[VocaSpot] disabled on this site, skipping');
     return;
   }
+  _selectionActive = true;
   main().catch(err => console.error('[VocaSpot] main error:', err));
 });
 
 let _rescanTimer = null;
 let _spaObserver = null;
+let _selectionActive = false;
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action !== 'settingsUpdated') return;
   clearTimeout(_rescanTimer);
   _rescanTimer = setTimeout(async () => {
     removeHighlights();
+    removeLookupButton();
+    _selectionActive = false;
+    _spaObserver?.disconnect();
+
     const { disabledSites = [] } = await chrome.storage.sync.get({ disabledSites: [] });
     if (disabledSites.includes(window.location.hostname)) return;
+
+    _selectionActive = true;
     main().catch(err => console.error('[VocaSpot] re-scan error:', err));
   }, 150);
 });
+
+// ---------------------------------------------------------------------------
+// Manual word selection lookup
+// ---------------------------------------------------------------------------
+
+document.addEventListener('mousedown', (e) => {
+  if (e.target.closest && e.target.closest('#vs-lookup-btn')) return;
+  if (typeof removeLookupButton === 'function') removeLookupButton();
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (!_selectionActive) return;
+  if (e.target.closest && (
+    e.target.closest('#vs-tooltip') ||
+    e.target.closest('#vs-sidebar-host') ||
+    e.target.closest('#vs-lookup-btn')
+  )) return;
+
+  const selection = window.getSelection();
+  const selectedText = selection?.toString().trim();
+
+  if (!selectedText) return;
+  if (selectedText.length > 40) return;
+  if (selectedText.split(/\s+/).length > 3) return;
+  if (/^[^a-zA-Z]+$/.test(selectedText)) return;
+
+  let cleaned = selectedText.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '').trim();
+  if (!cleaned) return;
+
+  const range = selection.getRangeAt(0);
+
+  // If the selection is entirely inside one highlight span, the click handler
+  // will deal with it (e.g. double-click on a highlighted word). Don't show
+  // a lookup button — that would leave two competing handlers active.
+  const startHighlight = range.startContainer.parentElement?.closest('.vs-highlight');
+  const endHighlight = range.endContainer.parentElement?.closest('.vs-highlight');
+  if (startHighlight && startHighlight === endHighlight) return;
+
+  const rect = range.getBoundingClientRect();
+
+  if (typeof showLookupButton === 'function') showLookupButton(cleaned, rect);
+});
+
+document.addEventListener('scroll', () => {
+  const btn = document.getElementById('vs-lookup-btn');
+  if (btn) btn.remove();
+}, { passive: true, capture: true });

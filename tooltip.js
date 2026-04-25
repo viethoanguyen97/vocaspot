@@ -5,6 +5,7 @@ function createTooltip() {
   const el = document.createElement('div');
   el.id = 'vs-tooltip';
   el.innerHTML =
+    '<div class="vs-source-label"></div>' +
     '<div class="vs-context"></div>' +
     '<div class="vs-word-header">' +
       '<span class="vs-word"></span>' +
@@ -40,6 +41,12 @@ function injectTooltipStyles() {
     '  line-height: 1.5;',
     '  color: #1a1a1a;',
     '  border-top: 4px solid #0D9488;',
+    '  display: none;',
+    '}',
+    '#vs-tooltip .vs-source-label {',
+    '  font-size: 11px;',
+    '  color: #888;',
+    '  margin-bottom: 4px;',
     '  display: none;',
     '}',
     '#vs-tooltip .vs-context {',
@@ -124,7 +131,7 @@ function _sentenceToHtml(sentence) {
 }
 
 function _positionTooltip(tip, span) {
-  const rect = span.getBoundingClientRect();
+  const rect = (span instanceof Element) ? span.getBoundingClientRect() : span;
   const GAP = 8;
   const tipH = tip.offsetHeight;
   const tipW = tip.offsetWidth;
@@ -147,16 +154,41 @@ function _positionTooltip(tip, span) {
   tip.style.left = `${Math.round(left)}px`;
 }
 
-function showTooltip(span, data) {
+function showTooltip(span, data, source = 'cefr') {
   const tip = document.getElementById('vs-tooltip');
   if (!tip) return;
 
-  const { context, definition } = data;
-  const word = span.dataset.lemma || span.dataset.word || span.textContent.trim();
+  const isManual = source === 'manual';
+  const definition = data.definition;
+  const word = isManual
+    ? data.word
+    : (span.dataset.lemma || span.dataset.word || span.textContent.trim());
 
-  tip.querySelector('.vs-context').innerHTML = _sentenceToHtml(context.sentence);
+  const sourceLabelEl = tip.querySelector('.vs-source-label');
+  if (sourceLabelEl) {
+    sourceLabelEl.textContent = isManual ? 'Manual lookup' : '';
+    sourceLabelEl.style.display = isManual ? '' : 'none';
+  }
+
+  const contextEl = tip.querySelector('.vs-context');
+  if (isManual) {
+    contextEl.innerHTML = '';
+    contextEl.style.display = 'none';
+  } else {
+    contextEl.innerHTML = _sentenceToHtml(data.context.sentence);
+    contextEl.style.display = '';
+  }
+
   tip.querySelector('.vs-word').textContent = word;
-  tip.querySelector('.vs-level').textContent = span.dataset.level || '';
+
+  const levelEl = tip.querySelector('.vs-level');
+  if (isManual) {
+    levelEl.textContent = '';
+    levelEl.style.display = 'none';
+  } else {
+    levelEl.textContent = span.dataset.level || '';
+    levelEl.style.display = '';
+  }
 
   const phoneticEl = tip.querySelector('.vs-phonetic');
   const audioBtn   = tip.querySelector('.vs-audio');
@@ -217,7 +249,11 @@ function showTooltip(span, data) {
   fullDefBtn.style.display = '';
   fullDefBtn.onclick = () => {
     hideTooltip();
-    populateSidebar(word, span.dataset.lemma || word, span.dataset.level || '', context, definition);
+    if (isManual) {
+      populateSidebar(word, word, '', { sentence: '' }, definition);
+    } else {
+      populateSidebar(word, span.dataset.lemma || word, span.dataset.level || '', data.context, definition);
+    }
     showSidebar();
   };
 
@@ -228,9 +264,14 @@ function showTooltip(span, data) {
 function _showLoading(span) {
   const tip = document.getElementById('vs-tooltip');
   if (!tip) return;
+  const sourceLabelEl = tip.querySelector('.vs-source-label');
+  if (sourceLabelEl) { sourceLabelEl.textContent = ''; sourceLabelEl.style.display = 'none'; }
   tip.querySelector('.vs-context').textContent = 'Loading…';
+  tip.querySelector('.vs-context').style.display = '';
   tip.querySelector('.vs-word').textContent = span.dataset.lemma || span.textContent.trim();
-  tip.querySelector('.vs-level').textContent = span.dataset.level || '';
+  const levelEl = tip.querySelector('.vs-level');
+  levelEl.textContent = span.dataset.level || '';
+  levelEl.style.display = '';
   tip.querySelector('.vs-phonetic').textContent = '';
   tip.querySelector('.vs-audio').style.display = 'none';
   tip.querySelector('.vs-definition').textContent = '';
@@ -245,6 +286,109 @@ function _showLoading(span) {
 function hideTooltip() {
   const tip = document.getElementById('vs-tooltip');
   if (tip) tip.style.display = 'none';
+}
+
+// ─── PART 3b — Manual lookup button ─────────────────────────────────────────
+
+function _getLemmaForLookup(word) {
+  if (typeof nlp !== 'function') return word;
+  const doc = nlp(word);
+  const infinitive = doc.verbs().toInfinitive().out('text');
+  if (infinitive) return infinitive;
+  const singular = doc.nouns().toSingular().out('text');
+  if (singular) return singular;
+  return word;
+}
+
+function _showLoadingAt(word, rect) {
+  const tip = document.getElementById('vs-tooltip');
+  if (!tip) return;
+  const sourceLabelEl = tip.querySelector('.vs-source-label');
+  if (sourceLabelEl) { sourceLabelEl.textContent = 'Manual lookup'; sourceLabelEl.style.display = ''; }
+  const contextEl = tip.querySelector('.vs-context');
+  contextEl.innerHTML = '';
+  contextEl.style.display = 'none';
+  tip.querySelector('.vs-word').textContent = word;
+  const levelEl = tip.querySelector('.vs-level');
+  levelEl.textContent = '';
+  levelEl.style.display = 'none';
+  tip.querySelector('.vs-phonetic').textContent = '';
+  tip.querySelector('.vs-audio').style.display = 'none';
+  tip.querySelector('.vs-definition').textContent = 'Loading…';
+  tip.querySelector('.vs-example').style.display = 'none';
+  tip.querySelector('.vs-synonyms').style.display = 'none';
+  tip.querySelector('.vs-links').innerHTML = '';
+  tip.querySelector('.vs-full-def').style.display = 'none';
+  tip.style.display = 'block';
+  _positionTooltip(tip, rect);
+}
+
+function removeLookupButton() {
+  const btn = document.getElementById('vs-lookup-btn');
+  if (btn) btn.remove();
+}
+
+function showLookupButton(selectedText, rect) {
+  removeLookupButton();
+  injectTooltipStyles();
+  createTooltip();
+
+  const btn = document.createElement('div');
+  btn.id = 'vs-lookup-btn';
+  btn.textContent = `Look up: ${selectedText}`;
+  Object.assign(btn.style, {
+    position: 'fixed',
+    zIndex: '999997',
+    background: '#0D9488',
+    color: 'white',
+    borderRadius: '20px',
+    padding: '6px 12px',
+    fontSize: '13px',
+    fontFamily: 'system-ui, sans-serif',
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+    opacity: '0',
+    transition: 'opacity 150ms',
+    whiteSpace: 'nowrap',
+    userSelect: 'none',
+    border: 'none',
+  });
+
+  document.body.appendChild(btn);
+
+  const btnW = btn.offsetWidth;
+  const centerX = rect.left + rect.width / 2;
+  let left = centerX - btnW / 2;
+  const top = rect.top >= 60 ? rect.top - 40 : rect.bottom + 10;
+  left = Math.max(4, Math.min(window.innerWidth - btnW - 4, left));
+
+  btn.style.top = `${Math.round(top)}px`;
+  btn.style.left = `${Math.round(left)}px`;
+
+  requestAnimationFrame(() => { btn.style.opacity = '1'; });
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removeLookupButton();
+    window.getSelection().removeAllRanges();
+
+    // Multi-word phrases: skip lemmatization to avoid silently falling back to
+    // a single-word definition (e.g. "climate change" → "change").
+    const lemma = selectedText.includes(' ') ? selectedText : _getLemmaForLookup(selectedText);
+    _showLoadingAt(selectedText, rect);
+
+    const token = ++_requestToken;
+    chrome.runtime.sendMessage(
+      { action: 'fetchDefinition', word: selectedText, lemma },
+      definition => {
+        if (chrome.runtime.lastError || !definition) {
+          definition = { error: true, word: selectedText };
+        }
+        if (token !== _requestToken) return;
+        showTooltip(rect, { word: selectedText, definition }, 'manual');
+      }
+    );
+  });
 }
 
 // ─── PART 4 — Event listeners ─────────────────────────────────────────────────
@@ -292,6 +436,7 @@ function init() {
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      removeLookupButton();
       if (isSidebarVisible()) {
         hideSidebar();  // Escape closes sidebar first
       } else {
