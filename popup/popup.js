@@ -34,14 +34,6 @@ function applyUI() {
   });
 }
 
-async function loadStats() {
-  const today = new Date().toISOString().slice(0, 10);
-  const { wordCount = 0, wordCountDate = '' } =
-    await chrome.storage.local.get({ wordCount: 0, wordCountDate: '' });
-  document.getElementById('word-count').textContent =
-    wordCountDate === today ? wordCount : 0;
-}
-
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab || null;
@@ -119,7 +111,7 @@ function bindEvents() {
 async function init() {
   await loadSettings();
   applyUI();
-  await Promise.all([loadStats(), loadSiteToggle()]);
+  await loadSiteToggle();
   bindEvents();
 }
 

@@ -330,15 +330,6 @@ function removeHighlights() {
   hideSidebar();
 }
 
-async function updateWordCount(count) {
-  if (count <= 0) return;
-  const today = new Date().toISOString().slice(0, 10);
-  const { wordCount = 0, wordCountDate = '' } =
-    await chrome.storage.local.get({ wordCount: 0, wordCountDate: '' });
-  const existing = wordCountDate === today ? wordCount : 0;
-  await chrome.storage.local.set({ wordCount: existing + count, wordCountDate: today });
-}
-
 async function main() {
   try {
     const { targetLevel = 'B2', highlightStyle = 'underline-dashed' } =
@@ -370,7 +361,6 @@ async function main() {
 
     highlightWords(filtered, highlightStyle);
     init();
-    updateWordCount(filtered.length).catch(() => {});
 
     // Watch for large DOM mutations that indicate a SPA navigated to a new article
     // (e.g. BBC, Guardian). Disconnect any previous observer first so we don't

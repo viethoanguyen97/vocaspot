@@ -202,17 +202,6 @@ body {
   transform: translateX(18px);
 }
 
-/* ── Stats ───────────────────────────────────────────────── */
-
-.vs-stats {
-  font-size: 12px;
-  color: #0D9488;
-  font-weight: 500;
-  padding: 8px 10px;
-  background: #f0fdfc;
-  border-radius: 6px;
-  margin-top: 2px;
-}
 
 /* ── Footer ──────────────────────────────────────────────── */
 

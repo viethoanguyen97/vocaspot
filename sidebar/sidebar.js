@@ -2,7 +2,6 @@
 
 let _shadowRoot = null;
 let _sbAudioInstance = null;
-let _currentWordData = null;
 
 async function injectSidebar() {
   if (document.getElementById('vs-sidebar-host')) return;
@@ -29,7 +28,6 @@ async function injectSidebar() {
   shadow.appendChild(tmp.firstElementChild);
 
   shadow.querySelector('.vs-sb-close').addEventListener('click', hideSidebar);
-  shadow.querySelector('.vs-sb-save').addEventListener('click', _saveCurrentWord);
 
   _shadowRoot = shadow;
 }
@@ -57,7 +55,6 @@ function _sbSentenceToHtml(sentence) {
 
 function populateSidebar(word, lemma, level, context, definition) {
   if (!_shadowRoot) return;
-  _currentWordData = { word, lemma, level, definition };
 
   _shadowRoot.querySelector('.vs-sb-word').textContent = word;
   _shadowRoot.querySelector('.vs-sb-level-badge').textContent = level || '';
@@ -120,23 +117,4 @@ function populateSidebar(word, lemma, level, context, definition) {
   _shadowRoot.querySelector('.vs-sb-merriam').href =
     `https://www.merriam-webster.com/dictionary/${enc}`;
 
-  _shadowRoot.querySelector('.vs-sb-saved-msg').hidden = true;
-}
-
-// ─── Save word ────────────────────────────────────────────────────────────────
-
-async function _saveCurrentWord() {
-  if (!_currentWordData || !_shadowRoot) return;
-  const msg = _shadowRoot.querySelector('.vs-sb-saved-msg');
-  try {
-    const { savedWords = [] } = await chrome.storage.local.get({ savedWords: [] });
-    savedWords.push(_currentWordData);
-    if (savedWords.length > 100) savedWords.splice(0, savedWords.length - 100);
-    await chrome.storage.local.set({ savedWords });
-    msg.textContent = 'Saved!';
-  } catch {
-    msg.textContent = 'Could not save — storage full?';
-  }
-  msg.hidden = false;
-  setTimeout(() => { msg.hidden = true; }, 2000);
 }
