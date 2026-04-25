@@ -168,7 +168,7 @@ function showTooltip(span, data) {
   if (definition.error) {
     phoneticEl.textContent = '';
     audioBtn.style.display = 'none';
-    defEl.textContent = 'Definition not found.';
+    defEl.textContent = 'Definition not found — try Cambridge Dictionary';
     exEl.style.display = 'none';
     synEl.style.display = 'none';
   } else {
@@ -179,7 +179,7 @@ function showTooltip(span, data) {
       audioBtn.onclick = () => {
         if (_audioInstance) _audioInstance.pause();
         _audioInstance = new Audio(definition.audio);
-        _audioInstance.play().catch(() => {});
+        _audioInstance.play().catch(() => { audioBtn.style.display = 'none'; });
       };
     } else {
       audioBtn.style.display = 'none';
@@ -270,6 +270,11 @@ function init() {
       chrome.runtime.sendMessage(
         { action: 'fetchDefinition', payload: { word: span.dataset.lemma } },
         definition => {
+          // Service worker may be terminated mid-fetch (MV3); definition
+          // arrives as undefined — treat it as a lookup failure.
+          if (chrome.runtime.lastError || !definition) {
+            definition = { error: true, word: span.dataset.lemma };
+          }
           if (token !== _requestToken) return;
           showTooltip(span, { context, definition });
         }

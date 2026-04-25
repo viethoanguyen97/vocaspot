@@ -127,11 +127,16 @@ function populateSidebar(word, lemma, level, context, definition) {
 
 async function _saveCurrentWord() {
   if (!_currentWordData || !_shadowRoot) return;
-  const { savedWords = [] } = await chrome.storage.local.get({ savedWords: [] });
-  savedWords.push(_currentWordData);
-  if (savedWords.length > 100) savedWords.splice(0, savedWords.length - 100);
-  await chrome.storage.local.set({ savedWords });
   const msg = _shadowRoot.querySelector('.vs-sb-saved-msg');
+  try {
+    const { savedWords = [] } = await chrome.storage.local.get({ savedWords: [] });
+    savedWords.push(_currentWordData);
+    if (savedWords.length > 100) savedWords.splice(0, savedWords.length - 100);
+    await chrome.storage.local.set({ savedWords });
+    msg.textContent = 'Saved!';
+  } catch {
+    msg.textContent = 'Could not save — storage full?';
+  }
   msg.hidden = false;
   setTimeout(() => { msg.hidden = true; }, 2000);
 }
