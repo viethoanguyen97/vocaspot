@@ -1,141 +1,121 @@
 const DEBUG = false;
 
-// Noise selectors that should never be treated as article body
-const SKIP_TAGS = new Set(['nav', 'header', 'footer', 'aside']);
-const SKIP_PATTERN = /menu|sidebar|\bad\b|banner|comment|footer|related/i;
-
-function isNoisy(el) {
-  if (SKIP_TAGS.has(el.tagName.toLowerCase())) return true;
-  const id = el.id || '';
-  const cls = el.className || '';
-  return SKIP_PATTERN.test(id) || SKIP_PATTERN.test(cls);
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
 }
 
-function hasNoisyAncestor(el) {
+const EXCLUDE_TAGS = new Set(['nav', 'header', 'footer', 'aside']);
+const EXCLUDE_ROLES = new Set(['navigation', 'banner', 'complementary', 'contentinfo']);
+const EXCLUDE_PATTERN = /nav|menu|header|footer|sidebar|\bad\b|banner|comment|related|recommend|share|social|cookie|popup|modal|newsletter|subscribe/i;
+
+function isExcluded(el) {
+  if (EXCLUDE_TAGS.has(el.tagName.toLowerCase())) return true;
+  const role = el.getAttribute('role');
+  if (role && EXCLUDE_ROLES.has(role)) return true;
+  const id = el.id || '';
+  const cls = el.getAttribute('class') || '';
+  return EXCLUDE_PATTERN.test(id) || EXCLUDE_PATTERN.test(cls);
+}
+
+function hasExcludedAncestor(el) {
   let node = el.parentElement;
   while (node && node !== document.body) {
-    if (isNoisy(node)) return true;
+    if (isExcluded(node)) return true;
     node = node.parentElement;
   }
   return false;
 }
 
 // ---------------------------------------------------------------------------
-// Byline / author-area filtering
+// Noise-element skipping
 //
-// NOTE: the spec requested a clone-then-strip approach, but cloned text nodes
-// are detached from the live DOM — highlightWords() can't use them to insert
-// spans on the visible page. Instead we collect elements to skip into
-// _scanSkip here, and filter them inside scanArticle's TreeWalker acceptNode.
-// Effect on the user is identical: byline content is never scanned or
+// NOTE: Step 4 of the spec requests a clone-then-remove approach, but cloned
+// text nodes are detached from the live DOM — highlightWords() can't insert
+// spans on the visible page from a clone. Instead we collect elements to skip
+// into _scanSkip here, and filter them inside scanArticle's TreeWalker.
+// Effect on the user is identical: noisy content is never scanned or
 // highlighted, and the live DOM is never mutated by findArticleBody.
 // ---------------------------------------------------------------------------
 
 // Populated once per findArticleBody() call; read by scanArticle's acceptNode.
 const _scanSkip = new Set();
 
-const BYLINE_PATTERN = /\b(author|byline|contributor|meta)\b/i;
-const BYLINE_WORD_THRESHOLD = 15;
-
-function isBylineElement(el) {
-  if (el.getAttribute('rel') === 'author') return true;
-  // Use getAttribute('class') rather than el.className — SVG elements return
-  // an SVGAnimatedString object from .className, not a plain string.
-  const cls = el.getAttribute('class') || '';
-  const id  = el.id || '';
-  return BYLINE_PATTERN.test(cls) || BYLINE_PATTERN.test(id);
-}
+const NOISE_TRIM_PATTERN = /author|byline|contributor|caption|figcaption|timestamp|\btag\b|topic|breadcrumb|share|related/i;
 
 function populateScanSkip(articleNode) {
   for (const el of articleNode.querySelectorAll('*')) {
-    if (isBylineElement(el)) _scanSkip.add(el);
+    const cls = el.getAttribute('class') || '';
+    const id = el.id || '';
+    if (NOISE_TRIM_PATTERN.test(cls) || NOISE_TRIM_PATTERN.test(id)) _scanSkip.add(el);
   }
 
-  // First <p> with fewer than BYLINE_WORD_THRESHOLD words is almost always
-  // a byline, dateline, or image caption rather than article body text.
+  for (const el of articleNode.querySelectorAll('figure, aside')) {
+    _scanSkip.add(el);
+  }
+
   const firstP = articleNode.querySelector('p');
   if (firstP) {
     const wordCount = firstP.textContent.trim().split(/\s+/).filter(Boolean).length;
-    if (wordCount < BYLINE_WORD_THRESHOLD) {
+    if (wordCount < 12) {
       _scanSkip.add(firstP);
-      if (DEBUG) console.log(`[VocaSpot] findArticleBody: skipping first <p> (${wordCount} words, likely byline)`);
+      if (DEBUG) console.log(`[VocaSpot] populateScanSkip: skipping short first <p> (${wordCount} words)`);
     }
   }
 }
 
 /**
  * Returns the live DOM node most likely to contain the main article text,
- * or null if nothing found. As a side-effect, populates _scanSkip with
- * byline/author child elements that scanArticle should ignore.
+ * or null if nothing qualifies. As a side-effect, populates _scanSkip with
+ * noisy child elements that scanArticle should ignore.
  */
 function findArticleBody() {
   _scanSkip.clear();
-  let result = null;
 
-  // 0. Site-specific selectors — checked first so known-good selectors take
-  //    priority over the heuristic fallbacks below.
-  const siteSelectors = {
-    'www.theguardian.com': '.article-body-commercial-selector',
-    'edition.cnn.com':     '.article__content',
-    // Reuters uses both a class-based and a data-testid-based container
-    // depending on article template; try both before falling back.
-    'www.reuters.com':     '.article-body__content, [data-testid="article-body"]',
-  };
-  const siteSelector = siteSelectors[location.hostname];
-  if (siteSelector) {
-    result = document.querySelector(siteSelector);
-    if (result) {
-      const matched = siteSelector.split(',').find(s => document.querySelector(s.trim()));
-      if (DEBUG) console.log(`[VocaSpot] findArticleBody matched: site-specific "${matched?.trim() ?? siteSelector}"`);
-    }
-  }
+  // Step 1 — collect candidates, excluding known chrome/navigation regions
+  const candidates = [...document.querySelectorAll('article, main, div, section')].filter(
+    el => !isExcluded(el) && !hasExcludedAncestor(el)
+  );
 
-  // 1. <article> tag
-  if (!result) {
-    const articles = [...document.querySelectorAll('article')].filter(
-      el => !isNoisy(el) && !hasNoisyAncestor(el)
+  // Step 2 — score each candidate
+  let winner = null;
+  let highestScore = 0;
+  let winnerParagraphCount = 0;
+
+  for (const el of candidates) {
+    const qualifying = [...el.querySelectorAll('p')].filter(
+      p => p.textContent.trim().split(/\s+/).filter(Boolean).length > 20
     );
-    if (articles.length) {
-      if (DEBUG) console.log('[VocaSpot] findArticleBody matched: <article>');
-      result = articles[0];
+    if (qualifying.length < 3) continue;
+    const totalTextLength = qualifying.reduce((sum, p) => sum + p.textContent.length, 0);
+    const score = qualifying.length * totalTextLength;
+    if (score > highestScore) {
+      highestScore = score;
+      winner = el;
+      winnerParagraphCount = qualifying.length;
     }
   }
 
-  // 2. <main> tag
-  if (!result) {
-    const mains = [...document.querySelectorAll('main')].filter(
-      el => !isNoisy(el) && !hasNoisyAncestor(el)
-    );
-    if (mains.length) {
-      if (DEBUG) console.log('[VocaSpot] findArticleBody matched: <main>');
-      result = mains[0];
-    }
-  }
-
-  // 3. Largest <div> with >= 5 <p> children (direct + nested)
-  if (!result) {
-    const MIN_PARAGRAPHS = 5;
-    let bestCount = 0;
-    for (const div of document.querySelectorAll('div')) {
-      if (isNoisy(div) || hasNoisyAncestor(div)) continue;
-      const count = div.querySelectorAll('p').length;
-      if (count >= MIN_PARAGRAPHS && count > bestCount) {
-        bestCount = count;
-        result = div;
-      }
-    }
-    if (result) {
-      if (DEBUG) console.log(`[VocaSpot] findArticleBody matched: largest <div> (${result.querySelectorAll('p').length} <p> elements)`);
-    }
-  }
-
-  if (!result) {
+  // Step 3 — threshold check
+  if (!winner) {
     if (DEBUG) console.log('[VocaSpot] no article body found');
     return null;
   }
 
-  populateScanSkip(result);
-  return result;
+  if (DEBUG) console.log(
+    '[VocaSpot] article detected:',
+    winner.tagName,
+    (winner.getAttribute('class') || '').slice(0, 50),
+    'score:', highestScore,
+    'paragraphs:', winnerParagraphCount
+  );
+
+  // Step 4 — mark noise child elements to skip
+  populateScanSkip(winner);
+  return winner;
 }
 
 // ---------------------------------------------------------------------------
@@ -240,6 +220,21 @@ async function scanArticle(articleNode) {
         }
       }
 
+      // Strategy 2: mid-sentence capitalised word → likely proper noun.
+      // A word is at the start of a sentence when offset is 0 (start of text
+      // node / block element) or the preceding non-whitespace char is . ! ?
+      if (raw[0] !== raw[0].toLowerCase()) {
+        const wordOffset = match.index;
+        if (wordOffset > 0) {
+          const preceding = text.slice(0, wordOffset).trimEnd();
+          const prevChar = preceding[preceding.length - 1];
+          if (prevChar && !/[.!?]/.test(prevChar)) {
+            properNounSkips++;
+            continue;
+          }
+        }
+      }
+
       const lemma = getLemma(raw);
       if (seenLemmas.has(lemma)) continue;
       // Check lemma first, then raw lowercase as fallback for unlemmable forms.
@@ -277,6 +272,17 @@ async function scanArticle(articleNode) {
 const CEFR_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MAX_HIGHLIGHTS = 20;
 
+const COMMON_WORDS_BLACKLIST = new Set([
+  'found', 'known', 'united', 'remains',
+  'growing', 'general', 'following',
+  'received', 'taken', 'given', 'called',
+  'second', 'later', 'early', 'once',
+  'across', 'around', 'within', 'further',
+  'already', 'always', 'never', 'often',
+  'walker', 'royal', 'prior', 'medium',
+  'current', 'recent', 'former', 'senior',
+]);
+
 // Returns a sort-priority for a word's part of speech (lower = higher priority).
 // Nouns first, then verbs, then adjectives, then everything else.
 // POS views (nouns/verbs/adjectives) return an empty view when the tag doesn't match.
@@ -303,7 +309,9 @@ function filterByUserLevel(words, targetLevel) {
     return [];
   }
 
-  const candidates = words.filter(w => w.cefrLevel === targetLevel);
+  const candidates = words.filter(w =>
+    w.cefrLevel === targetLevel && !COMMON_WORDS_BLACKLIST.has(w.lemma)
+  );
 
   if (candidates.length <= MAX_HIGHLIGHTS) return candidates;
 
@@ -366,22 +374,32 @@ async function main() {
     // (e.g. BBC, Guardian). Disconnect any previous observer first so we don't
     // accumulate listeners across re-scans.
     if (_spaObserver) _spaObserver.disconnect();
+    const _debouncedRescan = debounce(async () => {
+      for (const span of document.querySelectorAll('.vs-highlight')) {
+        span.replaceWith(document.createTextNode(span.textContent));
+      }
+      hideTooltip();
+      await main();
+    }, 1500);
+
     _spaObserver = new MutationObserver((mutations) => {
-      let added = 0;
+      // Ignore mutations caused by our own highlight insertions or UI elements.
       for (const m of mutations) {
         for (const node of m.addedNodes) {
-          // Skip our own highlight spans to avoid re-triggering on highlightWords().
-          if (node.nodeType === Node.ELEMENT_NODE &&
-              node.classList?.contains('vs-highlight')) continue;
-          added++;
+          if (node.nodeType !== Node.ELEMENT_NODE) continue;
+          if (node.classList?.contains('vs-highlight')) return;
+          if (typeof node.id === 'string' && node.id.startsWith('vs-')) return;
         }
       }
-      if (added < 20) return;
-      clearTimeout(_mutationTimer);
-      _mutationTimer = setTimeout(() => {
-        removeHighlights();
-        main();
-      }, 1000);
+      // Only re-scan when a meaningful amount of new text was added.
+      let newChars = 0;
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          newChars += node.textContent?.length ?? 0;
+        }
+      }
+      if (newChars <= 200) return;
+      _debouncedRescan();
     });
     _spaObserver.observe(document.body, { childList: true, subtree: true });
   } catch (err) {
@@ -408,7 +426,6 @@ scheduleIdle(async () => {
 });
 
 let _rescanTimer = null;
-let _mutationTimer = null;
 let _spaObserver = null;
 
 chrome.runtime.onMessage.addListener((msg) => {
