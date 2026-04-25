@@ -1,3 +1,7 @@
+// VocaSpot - Vocabulary spotter for English learners
+// Copyright (C) 2026 Grapes Labs by Viet Hoa Nguyen
+// Licensed under GPL v3 — see LICENSE for details
+
 const CEFR_DESCRIPTIONS = {
   A1: 'Beginner — basic everyday words',
   A2: 'Elementary — simple familiar topics',

@@ -1,3 +1,7 @@
+// VocaSpot - Vocabulary spotter for English learners
+// Copyright (C) 2026 Grapes Labs by Viet Hoa Nguyen
+// Licensed under GPL v3 — see LICENSE for details
+
 const definitionCache = new Map();
 const FETCH_TIMEOUT_MS = 5000;
 const RETRY_DELAY_MS = 1000;

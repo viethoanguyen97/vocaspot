@@ -55,4 +55,20 @@ and Octanove Labs, CC BY-SA 4.0
 
 ## License
 
-MIT License
+This project is licensed under the
+GNU General Public License v3.0.
+
+You are free to use, study, and modify this code.
+Any distribution of this software or derivative
+works must also be released under GPL v3.
+
+See [LICENSE](LICENSE) for full terms.
+
+## Built With AI Assistance
+
+VocaSpot was developed using Claude Code (Anthropic)
+as an AI coding assistant under human direction.
+
+All product decisions, architecture, UX choices,
+data source selection, and creative direction
+by Viet Hoa Nguyen.
