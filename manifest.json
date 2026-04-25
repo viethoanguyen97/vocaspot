@@ -3,7 +3,7 @@
   "name": "VocaSpot",
   "version": "1.0.0",
   "description": "Highlights words on news pages based on your CEFR level and shows context-aware definitions.",
-  "homepage_url": "https://github.com/viethoanguyen97/vocaspot",
+  "homepage_url": "https://github.com/grapes-labs/vocaspot",
   "permissions": [
     "storage",
     "activeTab"
