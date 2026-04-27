@@ -22,7 +22,7 @@ VocaSpot is a Chrome extension for English learners that highlights words on new
 
 ### From Chrome Web Store
 
-[placeholder - add link after publishing]
+[VocaSpot - CEFR Vocabulary Highlighter](https://chromewebstore.google.com/detail/ogpfelooklhlokeplobiofkhnhgpldoh?utm_source=item-share-cb)
 
 ### Manual Installation (Developer Mode)
 
@@ -48,10 +48,16 @@ No account is required and no personal data is collected. The only external requ
 
 Contributions are welcome. Open a GitHub Issue to report bugs or suggest improvements. The easiest way to contribute is via `custom_overrides.json` — this file lets you add missing news vocabulary words with their CEFR levels without touching any code.
 
-## Data Attribution
+## References & Attribution
 
-CEFR wordlist data: CEFR-J Project (Tono Laboratory, TUFS)
-and Octanove Labs, CC BY-SA 4.0
+**CEFR Wordlist**
+CEFR-J Wordlist by the [CEFR-J Project](http://www.cefr-j.org/) (Tono Laboratory, Tokyo University of Foreign Studies) and [Octanove Labs](https://github.com/octanove), licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+
+**Dictionary API**
+Word definitions are powered by the [Free Dictionary API](https://dictionaryapi.dev/) — a free, open-source REST API providing definitions, phonetics, and more.
+
+**NLP**
+Lemmatization powered by [compromise](https://github.com/spencermountain/compromise) by Spencer Kelly.
 
 ## License
 
